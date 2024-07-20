@@ -11,10 +11,10 @@
         <label for="link">YouTube Link:</label>
         <input type="text" id="link" name="link" required>
         <br>
-        <label for="download_type">Download:</label>
-        <select id="download_type" name="download_type">
-            <option value="video">Single Video</option>
-            <option value="playlist">Playlist</option>
+        <label for="media_type">Download:</label>
+        <select id="media_type" name="media_type">
+            <option value="1">Video</option>
+            <option value="2">Audio</option>
         </select>
         <br>
         <button type="submit">Download</button>
@@ -33,14 +33,7 @@
             .then(data => {
                 const resultDiv = document.getElementById('result');
                 if (data.status === 'success') {
-                    if (data.files) {
-                        resultDiv.innerHTML = '<h2>Downloaded Files:</h2>';
-                        data.files.forEach((file, index) => {
-                            resultDiv.innerHTML += `<p>${data.titles[index]}: <a href="${file}" download>${file}</a></p>`;
-                        });
-                    } else {
-                        resultDiv.innerHTML = `<h2>Downloaded File:</h2><p>${data.title}: <a href="${data.file}" download>${data.file}</a></p>`;
-                    }
+                    resultDiv.innerHTML = `<h2>Success:</h2><p>${data.message}</p>`;
                 } else {
                     resultDiv.innerHTML = `<h2>Error:</h2><p>${data.message}</p>`;
                 }
