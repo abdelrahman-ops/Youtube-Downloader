@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+</head>
+<body>
+    <h1>YouTube Downloader</h1>
+    <form id="downloadForm">
+        <label for="link">YouTube Link:</label>
+        <input type="text" id="link" name="link" required>
+        <br>
+        <label for="download_type">Download:</label>
+        <select id="download_type" name="download_type">
+            <option value="video">Single Video</option>
+            <option value="playlist">Playlist</option>
+        </select>
+        <br>
+        <button type="submit">Download</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/download', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.status === 'success') {
+                    if (data.files) {
+                        resultDiv.innerHTML = '<h2>Downloaded Files:</h2>';
+                        data.files.forEach((file, index) => {
+                            resultDiv.innerHTML += `<p>${data.titles[index]}: <a href="${file}" download>${file}</a></p>`;
+                        });
+                    } else {
+                        resultDiv.innerHTML = `<h2>Downloaded File:</h2><p>${data.title}: <a href="${data.file}" download>${data.file}</a></p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<h2>Error:</h2><p>${data.message}</p>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `<h2>Network Error:</h2><p>${error}</p>`;
+            });
+        });
+    </script>
+</body>
+</html>
