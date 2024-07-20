@@ -1,34 +1,33 @@
 from flask import Flask, request, jsonify, send_from_directory
-from pytube import YouTube, Playlist
-from pytube.cli import on_progress
-import os
+import yt_dlp
 
 app = Flask(__name__)
 
-# Function to download a single video
-def download_video(link):
-    try:
-        yt = YouTube(link, on_progress_callback=on_progress)
-        stream = yt.streams.get_highest_resolution()
-        file_path = stream.download()
-        return file_path, yt.title
-    except Exception as e:
-        return str(e), None
+def download_media(link, media_type):
+    ydl_opts = {}
 
-# Function to download a playlist
-def download_playlist(link):
-    try:
-        p = Playlist(link)
-        file_paths = []
-        titles = []
-        for video in p.videos:
-            stream = video.streams.get_highest_resolution()
-            file_path = stream.download()
-            file_paths.append(file_path)
-            titles.append(video.title)
-        return file_paths, titles
-    except Exception as e:
-        return str(e), None
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(link, download=False)
+
+        if media_type == "1":
+            ydl_opts = {'format': 'best'}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([link])
+            return f"Video downloaded: {info['title']}"
+        elif media_type == "2":
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([link])
+            return f"Audio downloaded: {info['title']}"
+        else:
+            return "Invalid choice. Please choose 1 for Video or 2 for Audio."
 
 @app.route('/')
 def index():
@@ -37,25 +36,13 @@ def index():
 @app.route('/download', methods=['POST'])
 def download():
     link = request.form['link']
-    download_type = request.form['download_type']
+    media_type = request.form['media_type']
 
-    if not link or not download_type:
+    if not link or not media_type:
         return jsonify({'status': 'error', 'message': 'Missing parameters'})
 
-    if download_type == 'video':
-        file_path, title = download_video(link)
-        if title:
-            return jsonify({'status': 'success', 'file': file_path, 'title': title})
-        else:
-            return jsonify({'status': 'error', 'message': file_path})
-    elif download_type == 'playlist':
-        file_paths, titles = download_playlist(link)
-        if titles:
-            return jsonify({'status': 'success', 'files': file_paths, 'titles': titles})
-        else:
-            return jsonify({'status': 'error', 'message': file_paths})
-    else:
-        return jsonify({'status': 'error', 'message': 'Invalid download type'})
+    result = download_media(link, media_type)
+    return jsonify({'status': 'success', 'message': result})
 
 if __name__ == "__main__":
     app.run(debug=True)
